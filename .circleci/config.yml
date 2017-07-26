@@ -1,0 +1,50 @@
+version: 2
+jobs:
+  build-go1.8:
+    docker:
+        - image: golang:1.8
+    working_directory: /go/src/github.com/micromdm/go4
+    steps: &steps
+      - checkout
+
+      # restor the vendor folder from cache
+      - restore_cache:
+          keys:
+            - vendor-cache-{{ .Branch }}-{{ checksum "Gopkg.lock" }}
+            - vendor-cache-{{ .Branch }}
+            - vendor-cache
+
+      # download dep
+      - run: go get -u github.com/golang/dep/...
+      - run: dep ensure
+
+      # store the cache using multiple keys to ensure a branch/pr specific cache hit.
+      - save_cache:
+          key: vendor-cache-{{ .Branch }}-{{ checksum "Gopkg.toml" }}
+          paths:
+            - vendor
+      - save_cache:
+          key: vendor-cache-{{ .Branch }}
+          paths:
+            - vendor
+      - save_cache:
+          key: vendor-cache
+          paths:
+            - vendor
+
+      - run: go install ./...
+      - run: go test -race -cover $(go list ./... | grep -v /vendor/)
+
+  build-go1.9:
+    docker:
+        - image: golang:1.9
+    working_directory: /go/src/github.com/micromdm/go4
+    steps: *steps
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - build-go1.8
+      - build-go1.9
+
