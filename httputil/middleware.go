@@ -86,3 +86,16 @@ func (auth *BasicAuth) Middleware() Middleware {
 		})
 	}
 }
+
+func enforceHSTS() Middleware {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.Header.Get("X-Forwarded-Proto") == "https" ||
+				r.URL.Scheme == "https" ||
+				(r.TLS != nil && r.TLS.HandshakeComplete) {
+				w.Header().Set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload")
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}

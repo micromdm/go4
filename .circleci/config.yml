@@ -32,7 +32,7 @@ jobs:
           paths:
             - vendor
 
-      - run: go install ./...
+      - run: go install $(go list ./... | grep -v /vendor/)
       - run: go test -race -cover $(go list ./... | grep -v /vendor/)
 
   build-go1.9:
