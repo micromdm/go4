@@ -26,6 +26,14 @@ func Chain(outer Middleware, others ...Middleware) Middleware {
 	}
 }
 
+// ChainFrom wraps an HTTP Handler with the provided Middlewares.
+func ChainFrom(h http.Handler, m ...Middleware) http.Handler {
+	if len(m) > 0 {
+		return Chain(m[0], m[1:]...)(h)
+	}
+	return h
+}
+
 // HTTPDebugMiddleware is a Middleware which prints the HTTP request and response to out.
 // Use os.Stdout to print to standard out.
 // If printBody is false, only the HTTP headers are printed.
