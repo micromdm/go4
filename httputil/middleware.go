@@ -52,8 +52,11 @@ func HTTPDebugMiddleware(out io.Writer, printBody bool, logger func(...interface
 
 			next.ServeHTTP(recorder, r)
 
-			for k, v := range recorder.Header() {
-				w.Header()[k] = v
+			for key, values := range recorder.Header() {
+				w.Header().Del(key)
+				for _, value := range values {
+					w.Header().Set(key, value)
+				}
 			}
 
 			buf := new(bytes.Buffer)
