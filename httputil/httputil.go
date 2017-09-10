@@ -172,7 +172,7 @@ func ListenAndServe(opts ...Option) error {
 		}
 		config.TLSConfig.GetCertificate = getCertificate(&m, config.LetsEncryptHosts, shutdown, config.logger)
 		m.Cache = autocert.DirCache(dir)
-	case hasAutocertCache:
+	case hasAutocertCache && !hasCert:
 		info.Log("msg", "serving HTTPS using Let's Encrypt certificates", "addr", config.Addr)
 		config.TLSConfig.GetCertificate = getCertificate(&m, config.LetsEncryptHosts, shutdown, config.logger)
 		m.Cache = config.AutocertCache
