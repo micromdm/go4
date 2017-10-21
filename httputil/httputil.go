@@ -114,6 +114,38 @@ func (cfg *serverConfig) apply(opts ...Option) {
 	}
 }
 
+// Simple returns a slice of ListenAndServe options that are most common for a
+// micromdm server project's main.go
+func Simple(
+	configPath string, // folder where le-certificates will be created.
+	handler http.Handler, // HTTP Handler to serve.
+	httpAddr string, // serve address, default should be :https
+	certPath, keyPath string, // tls credentials
+	useTLS bool, // use :8080 if false
+	logger log.Logger, // go-kit logger
+	whitelistHosts ...string, // whitelist LE domains
+) []Option {
+	tlsFromFile := (certPath != "" && keyPath != "")
+	serveOpts := []Option{
+		WithACMEHosts(whitelistHosts),
+		WithLogger(logger),
+		WithHTTPHandler(handler),
+	}
+	if tlsFromFile {
+		serveOpts = append(serveOpts, WithKeyPair(certPath, keyPath))
+	}
+	if !useTLS && httpAddr == ":https" {
+		serveOpts = append(serveOpts, WithAddress(":8080"))
+	}
+	if useTLS {
+		serveOpts = append(serveOpts, WithAutocertCache(autocert.DirCache(filepath.Join(configPath, "le-certificates"))))
+	}
+	if httpAddr != ":https" {
+		serveOpts = append(serveOpts, WithAddress(httpAddr))
+	}
+	return serveOpts
+}
+
 // ListenAndServe starts an HTTP server and runs until it receives an Interrupt
 // signal or an error.
 //
