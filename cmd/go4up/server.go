@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"text/template"
 
 	"github.com/pkg/errors"
@@ -17,10 +18,9 @@ import (
 func runServer(args []string) error {
 	flagset := flag.NewFlagSet("go4up", flag.ExitOnError)
 	var (
-		flAppName   = flagset.String("name", "example", "name of app")
 		flOutputDir = flagset.String(
 			"output",
-			filepath.Join(gopath(), "src", "github.com", "micromdm", *flAppName),
+			filepath.Join(gopath(), "src", "github.com", "micromdm", "example"),
 			"path to output",
 		)
 	)
@@ -29,16 +29,21 @@ func runServer(args []string) error {
 	if err := flagset.Parse(args); err != nil {
 		return err
 	}
+	dirs := strings.Split(*flOutputDir, "/")
+	appName := dirs[len(dirs)-1]
+	orgName := dirs[len(dirs)-2]
 
-	dir := filepath.Join(*flOutputDir, "cmd", *flAppName)
+	dir := filepath.Join(*flOutputDir, "cmd", appName)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return errors.Wrapf(err, "creating output directory %s", dir)
 	}
 
 	tmplArgs := struct {
 		Name string
+		Org  string
 	}{
-		Name: *flAppName,
+		Name: appName,
+		Org:  orgName,
 	}
 	makefileBuf := new(bytes.Buffer)
 	var makefileTmpl = template.Must(template.New("test").Parse(serverMakefileTemplate))
@@ -73,7 +78,7 @@ func runServer(args []string) error {
 		return errors.Wrapf(err, "writing file %s", dockerfilePath)
 	}
 
-	mainPath := filepath.Join(dir, fmt.Sprintf("%s.go", *flAppName))
+	mainPath := filepath.Join(dir, fmt.Sprintf("%s.go", appName))
 	if err := ioutil.WriteFile(mainPath, []byte(serverMainTemplate), 0644); err != nil {
 		return errors.Wrapf(err, "writing file %s", mainPath)
 	}
@@ -193,20 +198,20 @@ else
 endif
 
 BUILD_VERSION = "\
-	-X github.com/micromdm/{{.Name}}/vendor/github.com/micromdm/go4/version.appName=${APP_NAME} \
-	-X github.com/micromdm/{{.Name}}/vendor/github.com/micromdm/go4/version.version=${VERSION} \
-	-X github.com/micromdm/{{.Name}}/vendor/github.com/micromdm/go4/version.branch=${BRANCH} \
-	-X github.com/micromdm/{{.Name}}/vendor/github.com/micromdm/go4/version.buildUser=${USER} \
-	-X github.com/micromdm/{{.Name}}/vendor/github.com/micromdm/go4/version.buildDate=${NOW} \
-	-X github.com/micromdm/{{.Name}}/vendor/github.com/micromdm/go4/version.revision=${REVISION} \
-	-X github.com/micromdm/{{.Name}}/vendor/github.com/micromdm/go4/version.goVersion=${GOVERSION}"
+	-X github.com/{{.Org}}/{{.Name}}/vendor/github.com/micromdm/go4/version.appName=${APP_NAME} \
+	-X github.com/{{.Org}}/{{.Name}}/vendor/github.com/micromdm/go4/version.version=${VERSION} \
+	-X github.com/{{.Org}}/{{.Name}}/vendor/github.com/micromdm/go4/version.branch=${BRANCH} \
+	-X github.com/{{.Org}}/{{.Name}}/vendor/github.com/micromdm/go4/version.buildUser=${USER} \
+	-X github.com/{{.Org}}/{{.Name}}/vendor/github.com/micromdm/go4/version.buildDate=${NOW} \
+	-X github.com/{{.Org}}/{{.Name}}/vendor/github.com/micromdm/go4/version.revision=${REVISION} \
+	-X github.com/{{.Org}}/{{.Name}}/vendor/github.com/micromdm/go4/version.goVersion=${GOVERSION}"
 
-WORKSPACE = ${GOPATH}/src/github.com/micromdm/{{.Name}}
+WORKSPACE = ${GOPATH}/src/github.com/{{.Org}}/{{.Name}}
 check-deps:
 ifneq ($(shell test -e ${WORKSPACE}/Gopkg.lock && echo -n yes), yes)
 	@echo "folder is clonded in the wrong place, copying to a Go Workspace"
 	@echo "See: https://golang.org/doc/code.html#Workspaces"
-	@git clone git@github.com:micromdm/{{.Name}} ${WORKSPACE}
+	@git clone git@github.com:{{.Org}}/{{.Name}} ${WORKSPACE}
 	@echo "cd to ${WORKSPACE} and run make deps again."
 	@exit 1
 endif
@@ -287,7 +292,7 @@ import (
 func runServe(args []string) error {
 	flagset := flag.NewFlagSet("{{.Name}}", flag.ExitOnError)
 	var (
-		flConfigPath = flagset.String("config-dir", env.String("CONFIG_DIR", "/var/micromdm/{{.Name}}"), "Path to server config directory.")
+		flConfigPath = flagset.String("config-dir", env.String("CONFIG_DIR", "/var/{{.Org}}/{{.Name}}"), "Path to server config directory.")
 		flLogFormat  = flagset.String("log-format", env.String("LOG_FORMAT", "logfmt"), "Enable structured logging. Supported formats: logfmt, json.")
 		flLogLevel   = flagset.String("log-level", env.String("LOG_LEVEL", "info"), "Log level. Either info or debug.")
 		flHTTPDebug  = flagset.Bool("http-debug", false, "Enable debug for http(dumps full request).")
