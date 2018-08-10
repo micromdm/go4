@@ -267,16 +267,18 @@ func ListenAndServe(opts ...Option) error {
 			errs <- (&http.Server{
 				ReadTimeout:  5 * time.Second,
 				WriteTimeout: 5 * time.Second,
-				Handler: http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-					w.Header().Set("Connection", "close")
-					url := "https://" + req.Host + req.URL.String()
-					http.Redirect(w, req, url, http.StatusMovedPermanently)
-				}),
+				Handler:      m.HTTPHandler(http.HandlerFunc(redirect)),
 			}).ListenAndServe()
 		}()
 	}
 
 	return <-errs
+}
+
+func redirect(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Connection", "close")
+	url := "https://" + req.Host + req.URL.String()
+	http.Redirect(w, req, url, http.StatusMovedPermanently)
 }
 
 // tlsProfile represents a collection of TLS CipherSuites and their compatibility with Web Browsers.
