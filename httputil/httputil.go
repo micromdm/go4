@@ -262,7 +262,7 @@ func ListenAndServe(opts ...Option) error {
 		errs <- server.Serve(ln)
 	}()
 
-	if redirectHTTPS {
+	if redirectHTTPS || config.TLSConfig.GetCertificate != nil {
 		go func() {
 			errs <- (&http.Server{
 				ReadTimeout:  5 * time.Second,
