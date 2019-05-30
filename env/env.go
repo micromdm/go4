@@ -14,7 +14,10 @@ Example:
 */
 package env
 
-import "os"
+import (
+	"os"
+	"strconv"
+)
 
 // String returns the environment variable value specified by the key parameter,
 // otherwise returning a default value if set.
@@ -30,6 +33,16 @@ func String(key, def string) string {
 func Bool(key string, def bool) bool {
 	if env := os.Getenv(key); env == "true" || env == "TRUE" || env == "1" {
 		return true
+	}
+	return def
+}
+
+// Int returns the environment variable value specified by the key parameter,
+// otherwise returning a default value if set.
+func Int(key string, def int) int {
+	env := os.Getenv(key)
+	if i, err := strconv.Atoi(env); err == nil {
+		return i
 	}
 	return def
 }
