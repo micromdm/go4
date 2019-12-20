@@ -31,8 +31,13 @@ func String(key, def string) string {
 // Bool returns the environment variable value specified by the key parameter,
 // otherwise returning a default value if set.
 func Bool(key string, def bool) bool {
-	if env := os.Getenv(key); env == "true" || env == "TRUE" || env == "1" {
-		return true
+	if env, ok := os.LookupEnv(key); ok {
+		if env == "true" || env == "TRUE" || env == "1" {
+			return true
+		}
+		if env == "false" || env == "FALSE" || env == "0" {
+			return false
+		}
 	}
 	return def
 }
