@@ -8,5 +8,5 @@ require (
 	github.com/go-stack/stack v1.6.0 // indirect
 	github.com/kr/logfmt v0.0.0-20140226030751-b84e30acd515 // indirect
 	github.com/pkg/errors v0.8.0
-	golang.org/x/crypto v0.0.0-20170726172732-2faea1465de2
+	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 )

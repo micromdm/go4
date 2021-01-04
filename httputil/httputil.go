@@ -160,7 +160,7 @@ func ListenAndServe(opts ...Option) error {
 	}
 	config.TLSConfig = &tls.Config{
 		PreferServerCipherSuites: true,
-		NextProtos:               []string{"h2", "http/1.1"},
+		NextProtos:               []string{"h2", "http/1.1", acme.ALPNProto},
 	}
 	setProfile(config.TLSConfig, modern)
 
