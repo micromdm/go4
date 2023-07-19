@@ -59,6 +59,10 @@ func HTTPDebugMiddleware(out io.Writer, printBody bool, logger func(...interface
 				}
 			}
 
+			if recorder.Code != 0 {
+				w.WriteHeader(recorder.Code)
+			}
+
 			buf := new(bytes.Buffer)
 			recorder.Body.WriteTo(io.MultiWriter(w, buf))
 			recorder.Body = buf
