@@ -61,9 +61,9 @@ func WithAddress(addr string) Option {
 	return func(c *serverConfig) { c.Addr = addr }
 }
 
-// WithAllowRedirectHTTPS configures whether a listener will be started on :80 to redirect requests to :443
-func WithAllowRedirectHTTPS(allow bool) Option {
-	return func(c *serverConfig) { c.allowRedirectHTTPS = allow }
+// WithDisableRedirect configures whether a listener will be started on :80 to redirect requests to :443
+func WithDisableRedirect(disable bool) Option {
+	return func(c *serverConfig) { c.disableRedirectHTTPS = disable }
 }
 
 // WithLogger provides a logger for ListenAndServe.
@@ -110,8 +110,8 @@ type serverConfig struct {
 	// Enforce a Strict Trasport Security (HSTS) Header for all HTTPS Connections.
 	hsts bool
 
-	// Start a listener on :80 to redirect to :443
-	allowRedirectHTTPS bool
+	// Disable :80 -> :443 redirect
+	disableRedirectHTTPS bool
 
 	logger log.Logger
 }
@@ -161,11 +161,11 @@ func Simple(
 // Let's Encrypt to manage the server certificate.
 func ListenAndServe(opts ...Option) error {
 	config := &serverConfig{
-		Addr:               ":https",
-		Handler:            http.DefaultServeMux,
-		hsts:               true,
-		allowRedirectHTTPS: true,
-		logger:             log.NewNopLogger(),
+		Addr:                 ":https",
+		Handler:              http.DefaultServeMux,
+		hsts:                 true,
+		disableRedirectHTTPS: false,
+		logger:               log.NewNopLogger(),
 	}
 	config.TLSConfig = &tls.Config{
 		PreferServerCipherSuites: true,
@@ -271,7 +271,7 @@ func ListenAndServe(opts ...Option) error {
 		errs <- server.Serve(ln)
 	}()
 
-	if redirectHTTPS && config.allowRedirectHTTPS {
+	if redirectHTTPS && !config.disableRedirectHTTPS {
 		go func() {
 			errs <- (&http.Server{
 				ReadTimeout:  5 * time.Second,
